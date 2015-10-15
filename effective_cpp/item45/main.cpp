@@ -5,25 +5,25 @@ using namespace std;
 
 class A 
 { 
-	public: 
-		A() {}
-		~A() {}
+public: 
+	A() {}
+	~A() {}
 
-		A(const A &rhs)
-		{ 
-			cout << "copy constructor" << endl;
-			this->x = rhs.x;
-		}
+	A(const A &rhs)
+	{ 
+		cout << "copy constructor" << endl;
+		this->x = rhs.x;
+	}
 
-		A& operator=(const A &rhs)
-		{ 
-			cout << "assignment operator" << endl; 
-			this->x = rhs.x;
-			return *this;
-		}
+	A& operator=(const A &rhs)
+	{ 
+		cout << "assignment operator" << endl; 
+		this->x = rhs.x;
+		return *this;
+	}
 
-	private: 
-		int x;
+private: 
+	int x;
 };
 
 int main() 
