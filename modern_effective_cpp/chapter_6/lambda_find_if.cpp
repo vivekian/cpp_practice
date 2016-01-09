@@ -5,7 +5,7 @@
 
 using namespace std; 
 
-// This simple example generates 50 numbers randomly between 1 to 100 and 
+// This simple example generates MAX_NUMS numbers randomly between 1 to 100 and 
 // then returns the first number encountered between 40 to 60. The idea is to to use modern 
 // c++11 features. 
 
