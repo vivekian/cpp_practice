@@ -27,7 +27,7 @@ int main()
 
     cout << endl << endl; 
 
-    // use lambdas to select the first number between 40 and 60.
+    // use lambda function to select the first number between 40 and 60.
     auto selected = find_if(v.begin(), v.end(), 
                            [](int val) { return (val >= 40 && val <= 60); });
     
