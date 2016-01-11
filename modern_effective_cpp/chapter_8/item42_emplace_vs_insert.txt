@@ -1,0 +1,8 @@
+Scott says: 
+
+    "What makes it possible for emplacement functions to outperform insertion functions is their more flexible interface. Insertion functions take objects to be inserted, 
+     while emplacement functions take constructor arguments for objects to be inserted. This difference permits emplacement functions to avoid the creation and destruction 
+     of temporary objects that insertion functions can necessitate."
+
+This is the gist of this item. Being able to avoid creating temporaries increases performance and anyone writing C++ code truly cares about that. 
+
