@@ -8,34 +8,27 @@ struct Item {
     uint32_t index;
 };
 
-uint32_t FillKnapsack(std::vector<Item> &Items, const uint32_t MaxCap)
+uint32_t fill_knapsack(std::vector<Item> items, const uint32_t maxCapacity)
 {
     // sorting is done based on value/size ratio of the item
-    std::sort(Items.begin(), 
-              Items.end(), 
-              [](const Item& A, const Item& B) { return (A.value/A.size) > (B.value/B.size); });
+    std::sort(items.begin(), 
+              items.end(), 
+              [](const Item& a, const Item& b) { return (a.value/a.size) > (b.value/b.size); });
 
-    float c = 0, v = 0; 
+    float capacity = 0, value = 0; 
     
-    for (const auto& item: Items) { 
-        if (c + item.size <= MaxCap) { 
-            c += item.size; 
-            v += item.value; 
+    for (const auto& item: items) { 
+        if (capacity + item.size <= maxCapacity) { 
+            capacity += item.size; 
+            value += item.value; 
         } 
         else { 
-            v += (MaxCap - c)/item.size * item.value;
-            c = MaxCap; 
+            value += (maxCapacity - capacity)/item.size * item.value;
+            break; 
         }
-        
-        std::cout << "adding item " << item.index << " with value " << item.value << std::endl;
-        std::cout << "c: " << c << " v: " << v << std::endl; 
-       
-        // since the knapsack is filled we can break out.  
-        if (c >= MaxCap) 
-            break;
     }
 
-    return v; 
+    return value; 
 } 
 
 int main() 
@@ -44,8 +37,7 @@ int main()
                                 { 20, 20, 1},
                                 { 30, 10, 2} };
 
-    std::cout << FillKnapsack(items, 35) << std::endl; 
-
+    std::cout << fill_knapsack(items, 35) << std::endl; 
     return 0; 
 }
 
