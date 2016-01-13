@@ -3,19 +3,19 @@
 #include <vector> 
 
 struct Item { 
-    float value; 
-    float size; 
+    double value; 
+    double size; 
     uint32_t index;
 };
 
-uint32_t fill_knapsack(std::vector<Item> items, const uint32_t maxCapacity)
+double fill_knapsack(std::vector<Item> items, const uint32_t maxCapacity)
 {
     // sorting is done based on value/size ratio of the item
     std::sort(items.begin(), 
               items.end(), 
               [](const Item& a, const Item& b) { return (a.value/a.size) > (b.value/b.size); });
 
-    float capacity = 0, value = 0; 
+    double capacity = 0, value = 0; 
     
     for (const auto& item: items) { 
         if (capacity + item.size <= maxCapacity) { 
