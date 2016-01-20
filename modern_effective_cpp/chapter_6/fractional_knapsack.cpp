@@ -5,7 +5,6 @@
 struct Item { 
     double value; 
     double size; 
-    uint32_t index;
 };
 
 double fill_knapsack(std::vector<Item> items, const uint32_t maxCapacity)
@@ -13,7 +12,9 @@ double fill_knapsack(std::vector<Item> items, const uint32_t maxCapacity)
     // sorting is done based on value/size ratio of the item
     std::sort(items.begin(), 
               items.end(), 
-              [](const Item& a, const Item& b) { return (a.value/a.size) > (b.value/b.size); });
+              [](const Item& a, const Item& b) { 
+                return (a.value/a.size) > (b.value/b.size); 
+              });
 
     double capacity = 0, value = 0; 
     
@@ -33,9 +34,9 @@ double fill_knapsack(std::vector<Item> items, const uint32_t maxCapacity)
 
 int main() 
 { 
-    std::vector<Item> items = { { 10, 30, 0}, 
-                                { 20, 20, 1},
-                                { 30, 10, 2} };
+    std::vector<Item> items = { { 10, 30}, 
+                                { 20, 20},
+                                { 30, 10} };
 
     std::cout << fill_knapsack(items, 35) << std::endl; 
     return 0; 
