@@ -6,7 +6,7 @@ using namespace std;
 class A 
 { 
 public: 
-    A() {}
+    A():x(0) {}
     ~A() {}
 
     A(const A &rhs)
