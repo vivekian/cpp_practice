@@ -2,9 +2,11 @@
 
 #include <algorithm> 
 #include <cstdio> 
-#include <queue>
-#include <stdint.h> 
 #include <iostream> 
+#include <queue>
+#include <random>
+#include <stdint.h> 
+#include <vector> 
 
 using namespace std; 
 
@@ -19,12 +21,12 @@ namespace {
 class EdgeNode 
 {
     public: 
-        EdgeNode(const uint32_t i, const uint32_t w):
-            idx(i), weight(w), next(nullptr)
+        EdgeNode(const uint32_t index, const uint32_t w):
+            idx(index), weight(w), next(nullptr)
         {}
 
         uint32_t idx;       // index of the node in the graph
-        uint32_t weight;    // weight of the edge 
+        uint32_t weight;    // weight of the edge - unsigned int since all positive weights
         EdgeNode* next;     // pointer to the next node in the list
 };
 
@@ -44,6 +46,8 @@ class Graph
         Graph(const uint32_t num_vertices): 
             nvertices(num_vertices), edges(0)
         {
+            nodelist.resize(MAXV);
+            degree.resize(MAXV); 
             Initialize(); 
         }
 
@@ -53,12 +57,12 @@ class Graph
         // setup the nodelist and the outward degree value for each node to 0. 
         void Initialize() 
         {
-            fill(nodelist, nodelist+MAXV, nullptr); // initialize empty nodelist
-            fill(degree, degree+MAXV, 0);           // initialize the degree to 0 for each node
+            fill(nodelist.begin(), nodelist.end(), nullptr); // initialize empty nodelist
+            fill(degree.begin(), degree.end(), 0);           // initialize the degree to 0 for each node
         }
 
-        int V() { return nvertices; }       // return total number of vertices in the graph
-        int E() { return edges; }           // return total number of edges in the graph
+        int V() const { return nvertices; }       // return total number of vertices in the graph
+        int E() const { return edges; }           // return total number of edges in the graph
 
         // method returns true if x and y are connected by an edge, else false. 
         bool adjacent(const uint32_t x, const uint32_t y) 
@@ -80,9 +84,9 @@ class Graph
         
         // create an edge from node x to y
         // this requires to also create a node from y to x
-        void add(const uint32_t x, const uint32_t y, bool IsReverse)
+        void add(const uint32_t x, const uint32_t y, bool IsReverse, const uint32_t w)
         { 
-            EdgeNode* tmp = new EdgeNode(y, 0);         // create a new empty node 
+            EdgeNode* tmp = new EdgeNode(y, w);         // create a new empty node 
             tmp->next = nodelist[x];                    // insert at the beginning of list
             nodelist[x] = tmp;                          // append the rest of the list 
             degree[x]++;                                // increment the edge degree of node
@@ -90,7 +94,7 @@ class Graph
             // create an edge from y to x as well
             if (!IsReverse) { 
                 edges++;                                    // increment total edges
-                add(y, x, true); 
+                add(y, x, true, w); 
             }
         } 
        
@@ -165,24 +169,60 @@ class Graph
         }               
      
     private:
-        EdgeNode* nodelist[MAXV];   // adjacency list with edge information about each node  
-        uint32_t degree[MAXV];      // degree of each node in the graph 
+        vector<EdgeNode*> nodelist; // adjacency list with edge information about each node  
+        vector<uint32_t> degree;    // degree of each node in the graph 
         uint32_t nvertices;         // total number of vertices currently on the graph 
         uint32_t edges;             // total number of edges in the graph
 };
 
+class GraphGenerator 
+{ 
+    public: 
+        GraphGenerator(const double edge_density, const pair<uint32_t, uint32_t> distance_range):
+            density(edge_density), dRange(distance_range) 
+        {}
+
+        ~GraphGenerator() {}
+
+        void generate(Graph& g) 
+        {
+            random_device rd;
+            mt19937 mt(rd());
+            uniform_int_distribution<uint32_t> vertex_dist(0, g.V()-1);
+            uniform_real_distribution<double> distance_dist(dRange.first, dRange.second); 
+
+            // compute the number of edges to generate per node based on the density
+            uint32_t edges_per_node = g.V() * density;
+            cout << edges_per_node << endl; 
+            // generate edges for each node
+            for (int i=0; i<g.V(); ++i) { 
+              
+               // create end point of an edge using 
+                for (int e=0; e < edges_per_node; ++e) {
+                    uint32_t vertex = vertex_dist(mt);
+               
+                    // dont create a self loop or a duplicate edge
+                    if (vertex != i && !g.adjacent(vertex, i)) { 
+                        cout << "creating edge between " << i << " " << vertex << endl; 
+                        g.add(i, vertex, false, distance_dist(mt)); 
+                    }
+               }
+            }
+
+        }
+
+    private: 
+        double density; 
+        pair<uint32_t, uint32_t> dRange; 
+};
+
 
 int main() 
-{ 
-    Graph g(6); 
-
-    g.add(0, 1, false);
-    g.add(0, 5, false);
-    g.add(1, 2, false);   
-    g.add(1, 4, false);  
-    g.add(2, 3, false);  
-    g.add(3, 4, false);  
-    g.add(4, 5, false);  
+{
+    const int N = 10;  
+    Graph g(N); 
+    GraphGenerator gen(0.1, make_pair(0, N-1)); 
+    gen.generate(g); 
     g.print(); 
 
     cout << g.E() << endl; 
