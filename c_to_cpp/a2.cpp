@@ -1,14 +1,23 @@
 // Solution to assignment 2. 
 // The class declarations are followed by the class definitions. 
 //
-// 
+// To compile this program on Linux: 
+//      $CC -std=c++14 a2.cpp 
+//      where CC = g++ or clang++
+//
+// I have not compiled it on windows, but don't see why there would be any issues. Just make 
+// sure that C++14 support is turned on. 
+//
+// There are primarily 3 classes: Graph, GraphGenerator and ShortestPath.
+// ShortestPath uses a STL priority queue which sorts objects based on distance cost.
+//
+// There are 3 examples run from main(), one is a hand-crafted graph to make sure there is sanity. 
+// The other two examples involve simulating the graphs based on input - edge density, number of vertices and distance range.   
 
 #include <algorithm> 
 #include <cstdio> 
 #include <functional> 
 #include <iostream> 
-#include <limits>
-#include <map> 
 #include <queue>
 #include <random>
 #include <stdint.h> 
@@ -17,11 +26,13 @@
 using namespace std; 
 
 // Maximum number of nodes in a graph
+// anonymous namespace is the C++ way to declare static variable in a class.
 namespace { 
     const int MAXV = 100; 
 }
 
-// class - pair information about the end node and its associated cost 
+// Node has the most fundamental information about itself (index) and (cost). 
+// Its implicitly associated with a source node to which its connected.
 class Node
 { 
     public: 
@@ -46,7 +57,7 @@ class EdgeNode
         {}
 
         uint32_t idx;       // index of the node in the graph
-        double cost;    // weight of the edge - unsigned int since all positive weights
+        double cost;        // cost distance of the edge - unsigned int since all positive weights
         EdgeNode* next;     // pointer to the next node in the list
 };
 
@@ -203,12 +214,13 @@ class Graph
         }               
      
     private:
-        vector<EdgeNode*> nodelist; // adjacency list with edge information about each node  
-        vector<uint32_t> degree;    // degree of each node in the graph 
-        uint32_t nvertices;         // total number of vertices currently on the graph 
-        uint32_t edges;             // total number of edges in the graph
+        vector<EdgeNode*> nodelist;  // adjacency list with edge information about each node  
+        vector<uint32_t> degree;        // degree of each node in the graph 
+        uint32_t nvertices;             // total number of vertices currently on the graph 
+        uint32_t edges;                 // total number of edges in the graph
 };
 
+// class to generate a simulated graph based on edge density and distance range. 
 class GraphGenerator 
 { 
     public: 
@@ -218,43 +230,53 @@ class GraphGenerator
 
         ~GraphGenerator() {}
 
-        void generate(Graph& g) 
-        {
-            random_device rd;
-            mt19937 mt(rd());
-            uniform_int_distribution<uint32_t> vertex_dist(0, g.V()-1);
-            uniform_real_distribution<double> distance_dist(dRange.first, dRange.second); 
-
-            // compute the number of edges to generate per node based on the density
-            uint32_t edges_per_node = g.V() * density;
-            cout << edges_per_node << endl; 
-      
-            // generate edges for each node
-            for (int i=0; i<g.V(); ++i) { 
-              
-               // create end point of an edge using 
-                for (int e=0; e < edges_per_node; ++e) {
-                    uint32_t vertex = vertex_dist(mt);
-                    double path_cost = distance_dist(mt); 
-               
-                    // dont create a self loop or a duplicate edge
-                    if (vertex != i && !g.adjacent(vertex, i)) { 
-                        cout << "creating edge between " << i << " " << vertex << "with cost " << path_cost << endl; 
-                        g.add(i, vertex, path_cost, false); 
-                    }
-               }
-            }
-
-        }
+        // generate a graph based on edge density and distance range 
+        void generate(Graph& g); 
 
     private: 
+        // edge density for a graph between 0 to 1
         double density; 
+
+        // distance range across which random distances are picked up.
         pair<double, double> dRange; 
 };
 
+void GraphGenerator::generate(Graph& g) 
+{ 
+    // Although the assignment asks to generate a monte carlo simulation, sticking here with a simple 
+    // uniform distribution. 
+    // There are two distributions: 
+    //      vertex_dist is to generate vertices for a specific edge based on density 
+    //      distance_dist is to generate cost distance for each edge
+    random_device rd;
+    mt19937 mt(rd());
+    uniform_int_distribution<uint32_t> vertex_dist(0, g.V()-1);
+    uniform_real_distribution<double> distance_dist(dRange.first, dRange.second); 
+
+    // compute the number of edges to generate per node based on the density
+    uint32_t edges_per_node = g.V() * density;
+
+    // generate edges for each node
+    for (int i=0; i<g.V(); ++i) { 
+      
+       // create end point of an edge
+        for (int e=0; e < edges_per_node; ++e) {
+            uint32_t vertex = vertex_dist(mt);
+            double path_cost = distance_dist(mt); 
+       
+            // dont create a self loop or a duplicate edge
+            if (vertex != i && !g.adjacent(vertex, i)) { 
+                g.add(i, vertex, path_cost, false); 
+            }
+       }
+    }
+}
+
+// implements Djikastra's shortest path algorithm 
 class ShortestPath
 { 
     public: 
+        // constructor takes Graph object reference 
         ShortestPath(const Graph& g): graph(g) 
         {
             distance.resize(graph.V());
@@ -262,64 +284,73 @@ class ShortestPath
 
         ~ShortestPath() {}
 
-    void compute_shortest_paths()
-    {
-        // setup priority queue to sort items based on cost of the edges
-        struct LessThan { 
-            bool operator() (const Node& lhs, const Node& rhs) const { 
-                return lhs.cost < rhs.cost; 
-            }
-        };
-        function<bool(const Node& l, const Node& r)> lesserPath = [&] (const Node& a, const Node& b) 
-                                                                    { return a.cost < b.cost; };
-        priority_queue<Node, vector<Node>, LessThan> pq; 
+        // computer shortest paths for each vertex from the source
+        void compute_shortest_paths(); 
 
-        // take the first node and push it to priority queue with cost 0 
-        // next take all the neighbors for this node and compute cost and store them in pq 
-        // take the smallest cost node from pq and store it in visited vector 
-        // now evaluate all its neighbors and store each one the pq
-       
-        pq.emplace(0, 0.0);
-        distance[0] = 0; 
+        // print the shortest distance for each vertex from the source 
+        void print() const; 
 
-        for (int i=1; i<graph.V(); ++i) { 
-            distance[i]= (MAX_DIST); 
-        }
-        
-        while (!pq.empty()) { 
-            Node curr = pq.top();
-            pq.pop();
-             
-            vector<Node> nbrs = graph.neighbours(curr.idx); 
-            
-            for (auto & neighbor: nbrs) {
-                double newcost= neighbor.cost + distance[curr.idx]; 
-                if (newcost < distance[neighbor.idx]) { 
-                    distance[neighbor.idx] = newcost; 
-                    pq.emplace(neighbor.idx, newcost);
-                }
-            }
-        }   
-    }
-
-    void print()
-    { 
-        for (int i=0; i<distance.size(); ++i) {
-            cout << i << ": " << distance[i] << endl; 
-        }
-    }
-
-    double avg_path_cost() 
-    {
-        double sum = accumulate(distance.begin(), distance.end(), 0.0); 
-        return static_cast<double>(sum / distance.size());
-    }
+        // compute the average cost path for all nodes from source 
+        double avg_path_cost() const;  
 
     private: 
         Graph graph;
         vector<double> distance; 
         const double MAX_DIST = 100.0; 
 }; 
+
+void ShortestPath::compute_shortest_paths()
+{
+    // setup priority queue to sort items based on cost of the edges
+    struct LessThan { 
+        bool operator() (const Node& lhs, const Node& rhs) const { 
+            return lhs.cost < rhs.cost; 
+        }
+    };
+    function<bool(const Node& l, const Node& r)> lesserPath = [&] (const Node& a, const Node& b) 
+                                                                { return a.cost < b.cost; };
+    priority_queue<Node, vector<Node>, LessThan> pq; 
+
+    // we assume the source is 0 and distance of node 0 to itself is 0.
+    pq.emplace(0, 0.0);
+    distance[0] = 0; 
+
+    // for all the other nodes, setup a max distance 
+    for (int i=1; i<graph.V(); ++i) { 
+        distance[i]= (MAX_DIST); 
+    }
+    
+    while (!pq.empty()) { 
+        // priority queue is based on minheap, so the min cost vertex is always picked
+        Node curr = pq.top();
+        pq.pop();
+         
+        vector<Node> nbrs = graph.neighbours(curr.idx); 
+        // for each neighbor compute the new cost from source to node
+        // if the new cost is lower than existing cost, then update distance array
+        // and add the data point to the priority queue 
+        for (auto & neighbor: nbrs) {
+            double newcost= neighbor.cost + distance[curr.idx]; 
+            if (newcost < distance[neighbor.idx]) { 
+                distance[neighbor.idx] = newcost; 
+                pq.emplace(neighbor.idx, newcost);
+            }
+        }
+    }   
+}
+
+void ShortestPath::print() const 
+{ 
+    for (int i=0; i<distance.size(); ++i) {
+        cout << i << ": " << distance[i] << endl; 
+    }
+}
+
+double ShortestPath::avg_path_cost() const
+{ 
+    double sum = accumulate(distance.begin(), distance.end(), 0.0); 
+    return static_cast<double>(sum / distance.size());
+}
 
 void run_example1()
 { 
@@ -345,10 +376,10 @@ void run_example1()
 
 void run_example2() 
 { 
-    const int N = 10;
+    const int N = 50;
     Graph g(N); 
    
-    GraphGenerator gen(0.1, make_pair(0, N-1)); 
+    GraphGenerator gen(0.2, make_pair(0, N-1)); 
     gen.generate(g);
     g.print(); 
 
