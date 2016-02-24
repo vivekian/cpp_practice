@@ -1,9 +1,13 @@
-// Graph class representation
+// Solution to assignment 2. 
+// The class declarations are followed by the class definitions. 
+//
+// 
 
 #include <algorithm> 
 #include <cstdio> 
 #include <functional> 
 #include <iostream> 
+#include <limits>
 #include <map> 
 #include <queue>
 #include <random>
@@ -17,30 +21,32 @@ namespace {
     const int MAXV = 100; 
 }
 
+// class - pair information about the end node and its associated cost 
 class Node
 { 
     public: 
-    Node(const uint32_t index, const uint32_t path_cost):
-      idx(index), cost(path_cost) {}
+        Node(const uint32_t index, const uint32_t path_cost):
+          idx(index), cost(path_cost) {}
 
-    ~Node() {}
+        ~Node() {}
 
-    uint32_t idx; 
-    uint32_t cost; 
+        uint32_t idx; 
+        double cost; 
 };  
 
 // class - EdgeNode
 // purpsose - data structure to hold edge data from one node to another node
-//            including weight. also has a pointer to the next node in the edgelist
+//            including cost. also has a pointer to the next node in the edgelist
+//            primarily intended for edgelist information
 class EdgeNode 
 {
     public: 
-        EdgeNode(const uint32_t index, const uint32_t w):
-            idx(index), weight(w), next(nullptr)
+        EdgeNode(const uint32_t index, const uint32_t c):
+            idx(index), cost(c), next(nullptr)
         {}
 
         uint32_t idx;       // index of the node in the graph
-        uint32_t weight;    // weight of the edge - unsigned int since all positive weights
+        double cost;    // weight of the edge - unsigned int since all positive weights
         EdgeNode* next;     // pointer to the next node in the list
 };
 
@@ -98,9 +104,9 @@ class Graph
         
         // create an edge from node x to y
         // this requires to also create a node from y to x
-        void add(const uint32_t x, const uint32_t y, const uint32_t w, const bool IsReverse)
+        void add(const uint32_t x, const uint32_t y, const uint32_t c, const bool IsReverse)
         { 
-            EdgeNode* tmp = new EdgeNode(y, w);         // create a new empty node 
+            EdgeNode* tmp = new EdgeNode(y, c);         // create a new empty node 
             tmp->next = nodelist[x];                    // insert at the beginning of list
             nodelist[x] = tmp;                          // append the rest of the list 
             degree[x]++;                                // increment the edge degree of node
@@ -108,7 +114,7 @@ class Graph
             // create an edge from y to x as well
             if (!IsReverse) { 
                 edges++;                                    // increment total edges
-                add(y, x, w, true); 
+                add(y, x, c, true); 
             }
         } 
        
@@ -141,10 +147,10 @@ class Graph
         {
            EdgeNode* p = nodelist[x]; 
           
-           // iterate to find the edge from x to y and set the value(weight) correctly 
+           // iterate to find the edge from x to y and set the value(cost) correctly 
            while(p) { 
               if (p->idx == y) { 
-                 p->weight = v; 
+                 p->cost = v; 
                  break; 
               }
 
@@ -155,25 +161,26 @@ class Graph
         uint32_t get_edge_value(const uint32_t x, const uint32_t y) 
         {
            EdgeNode* p = nodelist[x]; 
-           uint32_t w = 0; 
+           uint32_t c = 0; 
 
            while(p) { 
               if (p->idx == y) { 
-                w = p->weight; 
+                c = p->cost; 
               }
               p = p->next; 
            } 
 
-           return w; 
+           return c; 
         }
 
+        // return a list of neighbors associated with a vertex
         vector<Node> neighbours(const uint32_t x)
         { 
             vector<Node> n; 
             EdgeNode* p = nodelist[x]; 
 
             while(p) { 
-                n.emplace_back(p->idx, p->weight); 
+                n.emplace_back(p->idx, p->cost); 
                 p = p->next; 
             }
 
@@ -221,17 +228,19 @@ class GraphGenerator
             // compute the number of edges to generate per node based on the density
             uint32_t edges_per_node = g.V() * density;
             cout << edges_per_node << endl; 
+      
             // generate edges for each node
             for (int i=0; i<g.V(); ++i) { 
               
                // create end point of an edge using 
                 for (int e=0; e < edges_per_node; ++e) {
                     uint32_t vertex = vertex_dist(mt);
+                    double path_cost = distance_dist(mt); 
                
                     // dont create a self loop or a duplicate edge
                     if (vertex != i && !g.adjacent(vertex, i)) { 
-                        cout << "creating edge between " << i << " " << vertex << endl; 
-                        g.add(i, vertex, distance_dist(mt), false); 
+                        cout << "creating edge between " << i << " " << vertex << "with cost " << path_cost << endl; 
+                        g.add(i, vertex, path_cost, false); 
                     }
                }
             }
@@ -240,7 +249,7 @@ class GraphGenerator
 
     private: 
         double density; 
-        pair<uint32_t, uint32_t> dRange; 
+        pair<double, double> dRange; 
 };
 
 class ShortestPath
@@ -248,14 +257,14 @@ class ShortestPath
     public: 
         ShortestPath(const Graph& g): graph(g) 
         {
+            distance.resize(graph.V());
         };
 
         ~ShortestPath() {}
 
     void compute_shortest_paths()
     {
-        // store lambda in a std::function which compares two paths.
-
+        // setup priority queue to sort items based on cost of the edges
         struct LessThan { 
             bool operator() (const Node& lhs, const Node& rhs) const { 
                 return lhs.cost < rhs.cost; 
@@ -270,45 +279,46 @@ class ShortestPath
         // take the smallest cost node from pq and store it in visited vector 
         // now evaluate all its neighbors and store each one the pq
        
-        pq.emplace(0, 0);
+        pq.emplace(0, 0.0);
+        distance[0] = 0; 
+
+        for (int i=1; i<graph.V(); ++i) { 
+            distance[i]= (MAX_DIST); 
+        }
         
         while (!pq.empty()) { 
             Node curr = pq.top();
             pq.pop();
-
-            auto itr = visited.find(curr.idx); 
-            if (itr == visited.end()) { 
-                visited.emplace(make_pair(curr.idx, curr)); 
-            } 
-            else if (itr->second.cost > curr.cost) {
-                    itr->second = curr; 
-            }
              
             vector<Node> nbrs = graph.neighbours(curr.idx); 
             
-            for (auto & n: nbrs) { 
-               pq.emplace(n.idx, n.cost + curr.cost); 
-            }   
-        }
+            for (auto & neighbor: nbrs) {
+                double newcost= neighbor.cost + distance[curr.idx]; 
+                if (newcost < distance[neighbor.idx]) { 
+                    distance[neighbor.idx] = newcost; 
+                    pq.emplace(neighbor.idx, newcost);
+                }
+            }
+        }   
     }
 
     void print()
     { 
-        for (const auto &node: visited) { 
-            cout << node.second.idx << "->" << node.second.cost << endl; 
+        for (int i=0; i<distance.size(); ++i) {
+            cout << i << ": " << distance[i] << endl; 
         }
     }
 
     double avg_path_cost() 
     {
-        double sum = accumulate(visited.begin(), visited.end(), 0.0,  [](double result, const std::pair<uint32_t, Node>&a) 
-                                                                       { return a.second.cost + result; });
-        return (sum / visited.size());
+        double sum = accumulate(distance.begin(), distance.end(), 0.0); 
+        return static_cast<double>(sum / distance.size());
     }
 
     private: 
         Graph graph;
-        map<uint32_t, Node> visited; 
+        vector<double> distance; 
+        const double MAX_DIST = 100.0; 
 }; 
 
 void run_example1()
@@ -323,23 +333,34 @@ void run_example1()
     g.add(3, 4, 2, false); 
     g.add(3, 5, 1, false); 
     g.add(4, 5, 2, false); 
-    
-//    GraphGenerator gen(0.1, make_pair(0, N-1)); 
-//    gen.generate(g); 
-    g.print(); 
-   
+  
+    g.print();
+
     ShortestPath sp(g); 
     sp.compute_shortest_paths(); 
     sp.print(); 
 
     cout << sp.avg_path_cost() << endl;  
-
-    cout << g.E() << endl; 
-    cout << g.V() << endl; 
 }
+
+void run_example2() 
+{ 
+    const int N = 10;
+    Graph g(N); 
+   
+    GraphGenerator gen(0.1, make_pair(0, N-1)); 
+    gen.generate(g);
+    g.print(); 
+
+    ShortestPath sp(g); 
+    sp.compute_shortest_paths();
+    sp.print(); 
+    cout << sp.avg_path_cost() << endl;  
+}   
 
 int main() 
 {
     run_example1(); 
+    run_example2();
     return 0; 
 }
