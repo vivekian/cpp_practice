@@ -216,6 +216,43 @@ class GraphGenerator
         pair<uint32_t, uint32_t> dRange; 
 };
 
+class Node
+{ 
+    public: 
+    Node(const uint32_t index, const uint32_t path_cost):
+      idx(index), cost(path_cost) {}
+
+    ~Node() {}
+
+    uint32_t idx; 
+    uint32_t cost; 
+};  
+
+class ShortestPath
+{ 
+    public: 
+        ShortestPath(const Graph& g): graph(g) 
+        {
+            // `visited.resize(g.V()); 
+        };
+
+        ~ShortestPath() {}
+
+    void compute_shortest_paths()
+    {
+    }
+
+    double avg_path_cost() 
+    {
+        double sum = accumulate(visited.begin(), visited.end(), 0.0,  [](double result, const Node& a) 
+                                                                       { return a.cost + result; });
+        return (sum / visited.size());
+    }
+
+    private: 
+        Graph graph; 
+        vector<Node> visited;
+}; 
 
 int main() 
 {
