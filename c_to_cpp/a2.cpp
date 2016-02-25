@@ -240,14 +240,19 @@ vector<Node> Graph::neighbours(const uint32_t x) const
 
 // print the contents of a graph
 void Graph::print() const
-{ 
+{
+   cout << "graph contents\n"; 
+
    for (int i=0; i<nvertices; ++i) { 
-        cout << i << " -> ";  
+        cout << i << ": ";  
         EdgeNode* p = nodelist[i]; 
 
         while(p) {
-            cout << p->idx << " -> "; 
-            p = p->next; 
+            cout << p->idx ; 
+            p = p->next;
+            
+            if (p)  
+                cout << ",";
         }
 
         cout << endl; 
@@ -314,6 +319,7 @@ class ShortestPath
         // constructor takes Graph object reference 
         ShortestPath(const Graph& g): graph(g) 
         {
+            // resize distance array to be of size V vertices
             distance.resize(graph.V());
         };
 
@@ -329,7 +335,10 @@ class ShortestPath
         double avg_path_cost() const;  
 
     private: 
+        // store the reference to graph object on which to operate
         Graph graph;
+
+        // distance vector for shortest distance from source to each node
         vector<double> distance; 
         const double MAX_DIST = 100.0; 
 }; 
@@ -342,8 +351,7 @@ void ShortestPath::compute_shortest_paths()
             return lhs.cost < rhs.cost; 
         }
     };
-    function<bool(const Node& l, const Node& r)> lesserPath = [&] (const Node& a, const Node& b) 
-                                                                { return a.cost < b.cost; };
+
     priority_queue<Node, vector<Node>, LessThan> pq; 
 
     // we assume the source is 0 and distance of node 0 to itself is 0.
@@ -361,6 +369,7 @@ void ShortestPath::compute_shortest_paths()
         pq.pop();
          
         vector<Node> nbrs = graph.neighbours(curr.idx); 
+    
         // for each neighbor compute the new cost from source to node
         // if the new cost is lower than existing cost, then update distance array
         // and add the data point to the priority queue 
@@ -409,6 +418,20 @@ void run_example1()
     cout << sp.avg_path_cost() << endl;  
 }
 
+void run_example3() 
+{ 
+    const int N = 50;
+    Graph g(N); 
+   
+    GraphGenerator gen(0.4, make_pair(0, N-1)); 
+    gen.generate(g);
+
+    ShortestPath sp(g); 
+    sp.compute_shortest_paths();
+    cout << endl; 
+    cout << "average cost of all paths with graph density 0.4: " << sp.avg_path_cost() << endl;  
+}   
+
 void run_example2() 
 { 
     const int N = 50;
@@ -416,17 +439,17 @@ void run_example2()
    
     GraphGenerator gen(0.2, make_pair(0, N-1)); 
     gen.generate(g);
-    g.print(); 
 
     ShortestPath sp(g); 
     sp.compute_shortest_paths();
-    sp.print(); 
-    cout << sp.avg_path_cost() << endl;  
+    cout << endl; 
+    cout << "average cost of all paths with graph density 0.2: " << sp.avg_path_cost() << endl;  
 }   
 
 int main() 
 {
     run_example1(); 
     run_example2();
+    run_example3();
     return 0; 
 }
