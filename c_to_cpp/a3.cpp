@@ -355,6 +355,7 @@ class MinimumSpanningTree
         // print the minimum spanning tree 
         void print() const; 
 
+        // returns the minimum spanning tree
         map<uint32_t, vector<uint32_t>> get_mst() {
             return mst; 
         }
@@ -470,6 +471,10 @@ void run_example2()
 {
     Graph g(string("sampledata.txt")); 
     g.print(); 
+    MinimumSpanningTree st(g); 
+
+    st.compute_prims(); 
+    cout << st.get_min_weight()i << endl;  
 }   
 
 int main() 
