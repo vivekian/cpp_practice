@@ -474,7 +474,7 @@ void run_example2()
     MinimumSpanningTree st(g); 
 
     st.compute_prims(); 
-    cout << st.get_min_weight()i << endl;  
+    cout << st.get_min_weight() << endl;  
 }   
 
 int main() 
