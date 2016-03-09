@@ -2,16 +2,19 @@
 // The class declarations are followed by the class definitions. 
 //
 // To compile this program on Linux: 
-//      $CC -std=c++14 a3.cpp 
+//      $CC -std=c++11 a3.cpp 
 //      where CC = g++ or clang++
 //
 // I have not compiled it on windows, but don't see why there would be any issues. Just make 
-// sure that C++14 support is turned on. 
+// sure that C++11 support is turned on. 
 //
 // There are primarily 2 classes: Graph, and MinimumSpanningTree.
 //
 // There are 2 examples run from main(), one is a hand-crafted graph to make sure there is sanity. 
 // The other example reads 'sampledata.txt' and generates a graph based on the input data.
+//
+// To get the minimum cost of the MST, call the compute_prim() method first, then get_min_cost(). 
+// To get the mimimum spanning tree itself, get_mst() is the correct call which will return a map of nodes and children.  
 
 #include <algorithm> 
 #include <cstdio> 
@@ -282,58 +285,6 @@ void Graph::print() const
 }               
  
 
-// class to generate a simulated graph based on edge density and distance range. 
-class GraphGenerator 
-{ 
-    public: 
-        GraphGenerator(const double edge_density, const pair<uint32_t, uint32_t> distance_range):
-            density(edge_density), dRange(distance_range) 
-        {}
-
-        ~GraphGenerator() {}
-
-        // generate a graph based on edge density and distance range 
-        void generate(Graph& g); 
-
-    private: 
-        // edge density for a graph between 0 to 1
-        double density; 
-
-        // distance range across which random distances are picked up.
-        pair<double, double> dRange; 
-};
-
-void GraphGenerator::generate(Graph& g) 
-{ 
-    // Although the assignment asks to generate a monte carlo simulation, sticking here with a simple 
-    // uniform distribution. 
-    // There are two distributions: 
-    //      vertex_dist is to generate vertices for a specific edge based on density 
-    //      distance_dist is to generate cost distance for each edge
-    random_device rd;
-    mt19937 mt(rd());
-    uniform_int_distribution<uint32_t> vertex_dist(0, g.V()-1);
-    uniform_real_distribution<double> distance_dist(dRange.first, dRange.second); 
-
-    // compute the number of edges to generate per node based on the density
-    uint32_t edges_per_node = g.V() * density;
-
-    // generate edges for each node
-    for (int i=0; i<g.V(); ++i) { 
-      
-       // create end point of an edge
-        for (int e=0; e < edges_per_node; ++e) {
-            uint32_t vertex = vertex_dist(mt);
-            double path_cost = distance_dist(mt); 
-       
-            // dont create a self loop or a duplicate edge
-            if (vertex != i && !g.adjacent(vertex, i)) { 
-                g.add(i, vertex, path_cost, false); 
-            }
-       }
-    }
-}
-
 // implements Minimum Spanning Tree algorithm using Prims' algorithm 
 class MinimumSpanningTree
 { 
@@ -352,9 +303,6 @@ class MinimumSpanningTree
            return min_cost; 
         } 
 
-        // print the minimum spanning tree 
-        void print() const; 
-
         // returns the minimum spanning tree
         map<uint32_t, vector<uint32_t>> get_mst() {
             return mst; 
@@ -366,7 +314,11 @@ class MinimumSpanningTree
 
         // this is a representation of a minimum spanning tree where the map 
         // has an index to the node and the associated vector represents 
-        // children to this node. 
+        // children to this node. This is because there is no default 
+        // tree representation in C++ STL so using a generic approach to build 
+        // a tree. An alternative would be to create a complete NodeTree structure
+        // to insert and search nodes, but it would be beyond the scope of this 
+        // assignment 
         map<uint32_t, vector<uint32_t>> mst; 
 
         // the min cost for the minimum spanning tree 
@@ -391,7 +343,7 @@ void MinimumSpanningTree::compute_prims()
     // setup priority queue to sort items based on cost of the edges
     struct LessThan { 
         bool operator() (const Edge& lhs, const Edge& rhs) const { 
-            return lhs.cost < rhs.cost; 
+            return lhs.cost > rhs.cost; 
         }
     };
 
@@ -401,11 +353,13 @@ void MinimumSpanningTree::compute_prims()
     vector<bool> visited (graph.V(), false); 
 
     // we start with vertex 0 so mark it visited 
-    visited[0] = 0; 
+    visited[0] = true; 
 
     // push all the neighbors of vertex 0 to the priority queue 
-    for (const auto& x: graph.neighbours(0)) { 
-        pq.emplace(Edge(0, x.idx, x.cost)); 
+    auto neighbors = graph.neighbours(0); 
+
+    for (const auto& x: neighbors) { 
+        pq.push(Edge(0, x.idx, x.cost));
     }
 
     // run till the priority_queue is empty  
@@ -419,10 +373,8 @@ void MinimumSpanningTree::compute_prims()
         if (!visited[e.dst]) { 
             // add the cost of the edge to the min cost; 
             min_cost += e.cost;
-
             // mark the dest node as visited 
             visited[e.dst] = true;  
-
             // add the node to the minimum spanning tree 
             mst[e.src].push_back(e.dst); 
 
@@ -430,16 +382,13 @@ void MinimumSpanningTree::compute_prims()
    
             // add each edge to each neighbor to the priority queue  
             for (auto & neighbor: nbrs) {
+                // if the neigbor is already visited, then skip it because its part othe MST.
                 if (!visited[neighbor.idx]) { 
-                    pq.emplace(Edge(e.dst, neighbor.idx, e.cost));
+                    pq.push(Edge(e.dst, neighbor.idx, neighbor.cost));
                 }
             }
         }
     }   
-}
-
-void MinimumSpanningTree::print() const 
-{ 
 }
 
 void run_example1()
@@ -456,16 +405,12 @@ void run_example1()
     g.add(4, 5, 2, false); 
   
     g.print();
-}
 
-void run_example3() 
-{ 
-    const int N = 50;
-    Graph g(N); 
-   
-    GraphGenerator gen(0.4, make_pair(0, N-1)); 
-    gen.generate(g);
-}   
+    MinimumSpanningTree st(g); 
+    st.compute_prims(); 
+    cout << "minimum weight of the spanning tree: ";  
+    cout << st.get_min_weight() << endl; 
+}
 
 void run_example2() 
 {
@@ -474,11 +419,13 @@ void run_example2()
     MinimumSpanningTree st(g); 
 
     st.compute_prims(); 
+    cout << "minimum weight of the spanning tree: ";
     cout << st.get_min_weight() << endl;  
 }   
 
 int main() 
 {
+    run_example1(); 
     run_example2();
     return 0; 
 }
