@@ -1,24 +1,24 @@
-// Solution to assignment 2. 
+// Solution to assignment 3. 
 // The class declarations are followed by the class definitions. 
 //
 // To compile this program on Linux: 
-//      $CC -std=c++14 a2.cpp 
+//      $CC -std=c++14 a3.cpp 
 //      where CC = g++ or clang++
 //
 // I have not compiled it on windows, but don't see why there would be any issues. Just make 
 // sure that C++14 support is turned on. 
 //
-// There are primarily 3 classes: Graph, GraphGenerator and ShortestPath.
-// ShortestPath uses a STL priority queue which sorts objects based on distance cost.
+// There are primarily 2 classes: Graph, and MinimumSpanningTree.
 //
-// There are 3 examples run from main(), one is a hand-crafted graph to make sure there is sanity. 
-// The other two examples involve simulating the graphs based on input - edge density, number of vertices and distance range.   
+// There are 2 examples run from main(), one is a hand-crafted graph to make sure there is sanity. 
+// The other example reads 'sampledata.txt' and generates a graph based on the input data.
 
 #include <algorithm> 
 #include <cstdio> 
 #include <functional> 
 #include <fstream> 
 #include <iostream> 
+#include <map> 
 #include <queue>
 #include <random>
 #include <stdint.h> 
@@ -77,8 +77,6 @@ class Graph
         Graph(const uint32_t num_vertices): 
             nvertices(num_vertices), num_edges(0)
         {
-            nodelist.resize(MAXV);
-            degree.resize(MAXV); 
             Initialize(); 
         }
 
@@ -91,6 +89,8 @@ class Graph
         // setup the nodelist and the outward degree value for each node to 0. 
         void Initialize() 
         {
+            nodelist.resize(MAXV);
+            degree.resize(MAXV); 
             fill(nodelist.begin(), nodelist.end(), nullptr); // initialize empty nodelist
             fill(degree.begin(), degree.end(), 0);           // initialize the degree to 0 for each node
         }
@@ -136,22 +136,22 @@ class Graph
         uint32_t num_edges;               
 };
 
-
+// This constructor generates a graph based on edge information in the text file.
+// The first entry is always the number of nodes followed by tuples which contain
+// the edge information
 Graph::Graph(const string& filename) 
 {
+   Initialize(); 
    ifstream infile(filename);  
 
-   nodelist.resize(MAXV);
-   degree.resize(MAXV); 
-   Initialize(); 
-
+   // read in the number of vertices 
    infile >> nvertices; 
 
+   uint32_t s, d, w; 
 
-   uint32_t a, b, w; 
-
-   while (infile >> a >> b >> w) { 
-       add(a, b, w, true); 
+   // read the source, destination and weight and add it as an edge to the graph
+   while (infile >> s >> d >> w) { 
+       add(s, d, w, true); 
    } 
 }
 
@@ -334,88 +334,111 @@ void GraphGenerator::generate(Graph& g)
     }
 }
 
-// implements Djikastra's shortest path algorithm 
-class ShortestPath
+// implements Minimum Spanning Tree algorithm using Prims' algorithm 
+class MinimumSpanningTree
 { 
     public: 
         // constructor takes Graph object reference 
-        ShortestPath(const Graph& g): graph(g) 
-        {
-            // resize distance array to be of size V vertices
-            distance.resize(graph.V());
-        };
+        MinimumSpanningTree(const Graph& g): graph(g), min_cost(0)
+        {};
 
-        ~ShortestPath() {}
+        ~MinimumSpanningTree() {}
 
-        // computer shortest paths for each vertex from the source
-        void compute_shortest_paths(); 
+        // compute the minimum spanning tree for the given graph. 
+        void compute_prims();
 
-        // print the shortest distance for each vertex from the source 
+        // return the cost of the minimum spanning tree 
+        uint32_t get_min_weight() { 
+           return min_cost; 
+        } 
+
+        // print the minimum spanning tree 
         void print() const; 
 
-        // compute the average cost path for all nodes from source 
-        double avg_path_cost() const;  
+        map<uint32_t, vector<uint32_t>> get_mst() {
+            return mst; 
+        }
 
     private: 
         // store the reference to graph object on which to operate
         Graph graph;
 
-        // distance vector for shortest distance from source to each node
-        vector<double> distance; 
-        const double MAX_DIST = 100.0; 
+        // this is a representation of a minimum spanning tree where the map 
+        // has an index to the node and the associated vector represents 
+        // children to this node. 
+        map<uint32_t, vector<uint32_t>> mst; 
+
+        // the min cost for the minimum spanning tree 
+        uint32_t min_cost;
+
+        // max number of children in a graph
+        const uint32_t MAXC = 100; 
 }; 
 
-void ShortestPath::compute_shortest_paths()
+void MinimumSpanningTree::compute_prims()
 {
+    // this struct holds the information for an edge - src, dst, and cost
+    struct Edge { 
+        Edge(uint32_t s, uint32_t d, uint32_t c): 
+            src(s), dst(d), cost(c) {} 
+
+        uint32_t src;
+        uint32_t dst; 
+        uint32_t cost; 
+    }; 
+
     // setup priority queue to sort items based on cost of the edges
     struct LessThan { 
-        bool operator() (const Node& lhs, const Node& rhs) const { 
+        bool operator() (const Edge& lhs, const Edge& rhs) const { 
             return lhs.cost < rhs.cost; 
         }
     };
 
-    priority_queue<Node, vector<Node>, LessThan> pq; 
+    priority_queue<Edge, vector<Edge>, LessThan> pq; 
 
-    // we assume the source is 0 and distance of node 0 to itself is 0.
-    pq.emplace(0, 0.0);
-    distance[0] = 0; 
+    // this tracks if a vertex has been visited or not 
+    vector<bool> visited (graph.V(), false); 
 
-    // for all the other nodes, setup a max distance 
-    for (int i=1; i<graph.V(); ++i) { 
-        distance[i]= (MAX_DIST); 
+    // we start with vertex 0 so mark it visited 
+    visited[0] = 0; 
+
+    // push all the neighbors of vertex 0 to the priority queue 
+    for (const auto& x: graph.neighbours(0)) { 
+        pq.emplace(Edge(0, x.idx, x.cost)); 
     }
-    
+
+    // run till the priority_queue is empty  
     while (!pq.empty()) { 
-        // priority queue is based on minheap, so the min cost vertex is always picked
-        Node curr = pq.top();
+        
+        // priority queue is based on minheap, so the min cost edge is always picked
+        Edge e = pq.top();
         pq.pop();
-         
-        vector<Node> nbrs = graph.neighbours(curr.idx); 
-    
-        // for each neighbor compute the new cost from source to node
-        // if the new cost is lower than existing cost, then update distance array
-        // and add the data point to the priority queue 
-        for (auto & neighbor: nbrs) {
-            double newcost= neighbor.cost + distance[curr.idx]; 
-            if (newcost < distance[neighbor.idx]) { 
-                distance[neighbor.idx] = newcost; 
-                pq.emplace(neighbor.idx, newcost);
+
+        // if vertex is not visited 
+        if (!visited[e.dst]) { 
+            // add the cost of the edge to the min cost; 
+            min_cost += e.cost;
+
+            // mark the dest node as visited 
+            visited[e.dst] = true;  
+
+            // add the node to the minimum spanning tree 
+            mst[e.src].push_back(e.dst); 
+
+            vector<Node> nbrs = graph.neighbours(e.dst); 
+   
+            // add each edge to each neighbor to the priority queue  
+            for (auto & neighbor: nbrs) {
+                if (!visited[neighbor.idx]) { 
+                    pq.emplace(Edge(e.dst, neighbor.idx, e.cost));
+                }
             }
         }
     }   
 }
 
-void ShortestPath::print() const 
+void MinimumSpanningTree::print() const 
 { 
-    for (int i=0; i<distance.size(); ++i) {
-        cout << i << ": " << distance[i] << endl; 
-    }
-}
-
-double ShortestPath::avg_path_cost() const
-{ 
-    double sum = accumulate(distance.begin(), distance.end(), 0.0); 
-    return static_cast<double>(sum / distance.size());
 }
 
 void run_example1()
@@ -432,12 +455,6 @@ void run_example1()
     g.add(4, 5, 2, false); 
   
     g.print();
-
-    ShortestPath sp(g); 
-    sp.compute_shortest_paths(); 
-    sp.print(); 
-
-    cout << sp.avg_path_cost() << endl;  
 }
 
 void run_example3() 
@@ -447,11 +464,6 @@ void run_example3()
    
     GraphGenerator gen(0.4, make_pair(0, N-1)); 
     gen.generate(g);
-
-    ShortestPath sp(g); 
-    sp.compute_shortest_paths();
-    cout << endl; 
-    cout << "average cost of all paths with graph density 0.4: " << sp.avg_path_cost() << endl;  
 }   
 
 void run_example2() 
