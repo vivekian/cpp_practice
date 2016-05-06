@@ -11,6 +11,11 @@
 //
 // the size of shared_ptr is twice that of the raw pointer, because it maintains a ref count. 
 
+// every shared_ptr object points to the item T itself and also has a pointer to the control block as well. 
+// the control block has the refcount info, weak count info and custom delete, and custom allocator methods. 
+//
+// 
+
 #include <iostream> 
 #include <memory> 
 
