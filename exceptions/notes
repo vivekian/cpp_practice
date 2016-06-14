@@ -1,0 +1,4 @@
+why not to use exceptions: 
+
+    * hard to figure out control flow path just looking at code. 
+    * c++ code which uses c library code is difficult to integrate. e.g. a function callback throws an exception which needs to be handled by the C code. 
