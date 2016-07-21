@@ -1,0 +1,3 @@
+- C++11 has the concept of rvalue references which are denoted by X&&. 
+- The older X& references are now called lvalue refernces. 
+- The reason for rvalue references is to implement move semantics. 
