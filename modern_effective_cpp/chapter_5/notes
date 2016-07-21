@@ -1,3 +1,7 @@
 - C++11 has the concept of rvalue references which are denoted by X&&. 
 - The older X& references are now called lvalue refernces. 
 - The reason for rvalue references is to implement move semantics. 
+
+What are move semantics? 
+    
+    Instead of copying resources from a temporary to another object, and then calling the destructor in the temporary, its more efficient to swap the pointers between the resources in the temp object and the destination object. 
