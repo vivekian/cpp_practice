@@ -1,0 +1,6 @@
+There are multiple ways to protect shared data between threads to avoid race conditions: 
+
+- mutexes 
+- lock free programming
+- STM (software transactional memory) 
+
