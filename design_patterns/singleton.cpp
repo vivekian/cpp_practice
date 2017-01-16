@@ -33,7 +33,5 @@ int main()
     first.join(); 
     second.join(); 
     third.join(); 
-
-    Singleton &s = Singleton::Instance(); 
 } 
 
