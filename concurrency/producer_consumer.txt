@@ -1,0 +1,32 @@
+Introduction: 
+
+Producer consumer problems involve 3 components: 
+    producers 
+    consumers 
+    buffers - temp holding areas. 
+
+Its possible that the producer is generating items at a pace greater than the consumer can use them. in this case we need a holding area where these items can be stored. 
+They are different from reader-writer problems. The reader never consumers items, while a consumer can remove/destroy items. 
+Think of a logging system - where multiple producers add entries to the logging system and consumer displays them on the screen/writes to a file. 
+
+Generally producer and consumer share a buffer of items which they must synchronize over. 
+- Producer overwrites an item which has not been consumed.
+- Consumer removes an item which does not exist or has been removed. 
+- Producer inserts an item when buffer is full. 
+- Consumer removes an item when producer is about to insert. 
+
+* When a slot is available, the producer should acquire the lock, insert the item and release it immidiately. 
+* Similarly a consumer should acquire the lock when a item is available for removal, remove it, and release the lock. 
+The above 2 actions are of short bounded duration. 
+
+* when there are no items available, consumer thread should just wait for items to become available. 
+* when the buffer is full, producer should wait for slots to become available. 
+These two items are of unbounded longer duration. 
+No locks should be held during this period. 
+Instead semaphores/conditional variables should be used here. 
+
+
+
+
+
+
