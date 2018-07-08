@@ -25,6 +25,7 @@ These two items are of unbounded longer duration.
 No locks should be held during this period. 
 Instead semaphores/conditional variables should be used here. 
 
+Busy waiting should be avoided at all costs because it prevents the other thread from executing at all consuming all CPU cycles. 
 
 
 
