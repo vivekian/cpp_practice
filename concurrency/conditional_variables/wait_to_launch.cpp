@@ -12,6 +12,7 @@ void prep_work()
 
 void main_work() 
 {
+   std::this_thread::sleep_for(100ms); 
    printf("main work\n");  
 }
 
@@ -33,11 +34,8 @@ int main()
 
 
     unique_lock<mutex> ul(ready_mutex); 
-    while (!ready) 
-        cv.wait(ul); 
-
+    cv.wait(ul, [&ready]() { return ready;});
     printf("no more waiting\n"); 
-
     thread_b.join();
     return 0;  
 }
