@@ -1,0 +1,77 @@
+data type in C++ 
+    what possible values and operations are possible with a data type. 
+
+primitive data types in C++
+    int, float, char, double, bool 
+    void is a special type with empty value or non complete value. 
+
+built in data types 
+    hash tables or complex numbers 
+    provided by SLT in C++. 
+
+user defined data types 
+    enum or class 
+    class adds a user defined data type in C++ 
+
+abstract data type 
+    cannot directly instantiate an abstract class 
+    but you can instantiate a subclass as an object
+
+pointer data type 
+    int* foo1; 
+    Widget* widget1; 
+    pointer is an address to a variable in memory. 
+    
+pointer visibility 
+    private: 
+        string* pstr; 
+    
+    is the pointer private? yes 
+    is the string pointed to private? maybe/unknown because we don't know what string it points to. 
+references 
+    no references in C. 
+    pass by reference in C is actually passing by pointer. 
+    C++ always had a reference data type, but C++11 added new data types related to this. 
+    reference to an object is exactly the same as original object. 
+        Widget& pb = button; 
+
+function pointer data type
+    a pointer which points to a function with matching signature 
+    invoked like a normal fn call
+    used commonaly in callbacks or argument to another function. 
+
+    void (*myprocess) (int); 
+    myprocess(42); 
+
+method pointer
+        bool (Widget:: *method)(int); 
+        Widget foo; 
+        bool data = foo->*method(23);  
+    rarely used mechanism.  
+
+lambdas 
+    short cut to functor (syntatic sugar to functor) 
+
+    [capturelist] (args) -> ret_type { 
+        body of lambda
+    }
+    
+    capturelist 
+        by value or reference. or capture by move (c++14) 
+        captured values are const, unless the lambda is defined as mutable 
+        be careful about capturing by value or reference 
+     
+                
+lvalue 
+    has a name and identity 
+    lifetime persists beyond current statement. 
+    you can take its address 
+
+rvalue 
+    does not have a name, temporary value
+    lifetime ends with current statement 
+
+lvalue reference 
+    regular references from C++03. 
+    const int & cnt = 42; 
+    
