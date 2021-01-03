@@ -63,7 +63,7 @@ int main()
 {
     vector<thread> cthreads, pthreads;  
     const int NUM_THREADS = 100; 
-    constexpr int numloops = MAX/NUM_THREADS; 
+    static constexpr int numloops = MAX/NUM_THREADS;
 
     for (int i=0; i<NUM_THREADS; ++i) {
         pthreads.emplace_back(thread(producer, numloops));  
