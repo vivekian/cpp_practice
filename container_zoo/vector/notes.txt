@@ -1,0 +1,5 @@
+
+* different from std::array because of resizeablility 
+* contigous containers - useful because of cache friendeliness and locality of data. 
+* 
+
