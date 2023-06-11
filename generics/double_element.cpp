@@ -19,10 +19,10 @@ int count_if(const Container& container, Predicate pred) {
 } 
 
 int main() { 
-  std::vector<int> veci = {1, 2, 3, 4}; 
-  const std::vector<int> veci_double = {2, 4, 6, 8};
+  std::vector<int> veci = {1, 2, 2, 3, 4}; 
+  const std::vector<int> veci_double = {2, 4, 4, 6, 8};
   double_each_element(veci); 
   assert(veci == veci_double); 
-  assert(count_if(veci, [](int x) { return x == 2; }) == 1); 
+  assert(count_if(veci, [](int x) { return x == 4; }) == 2); 
   return 0; 
 } 
