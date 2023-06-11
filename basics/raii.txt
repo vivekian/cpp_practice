@@ -1,0 +1,18 @@
+arthur o dwyer: raii and the rule of zero. 
+https://www.youtube.com/watch?v=7Qgd9B1KuMQ
+
+destructors are required to cleanup resources 
+copy constructors are required to duplicate resources 
+whenever you write a destructor, also think about writing a copy constructor as well - because it indicates that there are resources which need to be duplicated. this applies to all resources - not just memory. 
+without a copy constructor, resources will not be duplicated, and quite possibly double freed. 
+
+initialization is not assignment 
+  a copy constructor is not the same as the assignment operator. 
+  consider 
+    Foo f = g; 
+  is copy constructor. 
+    Foo f; 
+    f = g; 
+  is assignment operator. 
+
+
