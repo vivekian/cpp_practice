@@ -11,8 +11,6 @@ public:
 	X(){} 
 	~X() { cout << "Destructor X" << endl; } 
 	void Print() { cout << "X" << endl; } 
-private: 
-	int _foo; 
 }; 
 
 int main() 

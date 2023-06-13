@@ -1,8 +1,10 @@
 why not to use raw pointers: 
 
-    - there is no way to know if its pointing to an object or an array 
-    - ownership is ambigous - no one knows who owns the thing its pointing to 
-    - its difficult to know what form of delete to use - single-object form "delete" vs "delete[]" array form
-    - very easy to get resource leaks - during error conditions or exceptions, its easy to miss out on deleting a pointer. double destruction errors are also possible where destructing more than once leads to undefined behavior. 
-    - dangling pointers is possible. 
+  - there is no way to know if its pointing to an object or an array 
+  - ownership is ambigous - no one knows who owns the thing its pointing to. unique_ptr enforces exclusive ownership. 
+  - its difficult to know what form of delete to use - single-object form "delete" vs "delete[]" array form
+  - very easy to get resource leaks - during error conditions or exceptions, its easy to miss out on deleting a pointer. double destruction errors are also possible where destructing more than once leads to undefined behavior. 
+  - dangling pointers is possible. 
 
+unique_ptr 
+  - 
